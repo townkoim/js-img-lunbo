@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+		ul{
+			margin: 0px;
+			padding: 0px;
+		}
+		ul li{
+			float: left;
+			list-style: none;
+			margin: 0px;
+			padding: 0px;
+		}
+		a{
+			margin: 0px;
+			padding: 0px;
+		}
+	
+		#wrapper{
+			margin: 0 auto;
+			width: 1280px;
+			height: 800px;
+			position: relative;
+		}
+		#imgs{
+			width: 1280px;
+			height: 100%;
+			overflow: hidden;
+			float: left;
+			position: relative;
+		}
+		#imgs ul{
+	    	position: absolute;
+            z-index: 1;
+            width: 7680px;
+            height: 400px;
+            left: -1280px;
+		}
+		#nav{
+			width: 100px;
+			height: 20px;
+			float: left;
+			position: absolute;
+			right: 10px;
+			bottom: 10px;
+			z-index: 5;
+		}
+
+		#nav ul li a{
+			width: 20px;
+			height: 20px;
+			line-height: 20px;
+			display: inline-block;
+			background: #FFF;
+			border-radius: 10px;
+			margin-right: 5px;
+			text-align: center;
+			font-size: 12px;
+		}
+		#preous,#next{
+			width: 100px;
+			background: #000;
+			font-size: 20px;
+			font-weight: 900;
+			text-align: center;
+			height: 80px;
+			line-height: 80px;
+			position: absolute;
+			top: 50%;
+			color: #FFF;
+			z-index: 3;
+		}
+		#preous{
+			left: 0px;
+		}
+		#next{
+			right: 0px;
+		}
+		#nav ul li a.current{
+			background: red;
+			color: #FFF;
+		}
+		#nav ul li a.hidden{
+			background: #FFF;
+			color: #000;
+		}
+		
+	</style>
+</head>
+<body>
+	<div id="wrapper">
+		<div id="imgs">
+			<ul>
+				<li><a href=""><img src="../image/4.jpg" alt=""></a></li>
+				<li><a href=""><img src="../image/1.jpg" alt=""></a></li>
+				<li><a href=""><img src="../image/2.jpg" alt=""></a></li>
+				<li><a href=""><img src="../image/3.jpg" alt=""></a></li>
+				<li><a href=""><img src="../image/4.jpg" alt=""></a></li>
+				<li><a href=""><img src="../image/1.jpg" alt=""></a></li>
+			</ul>
+		</div>
+		<div class="clear"></div>
+		<div id="nav">
+			<ul>
+				<li><a class="current">1</a></li>
+				<li><a>2</a></li>
+				<li><a>3</a></li>
+				<li><a>4</a></li>
+			</ul>
+		</div>
+		<div id="preous"><</div>
+		<div id="next">></div>
+	</div>
+	<script type="text/javascript">
+	//思路：1、先处理好左右两个按钮，来回切换，能够保证图片正常切换
+	//2、能正常来还切换之后，在来处理右下角的小圆点，跟随者图片切换来变化
+	//3、在切换中加上动画
+	//4、开启一个定时器，两秒调用一次右边按钮的onclick
+	//5、解决定时器和点击右边按钮以及图片切换动画定时器的冲突， 在点击按钮的时候，先停止轮播定时器和动画定时器， 
+	//（当前有可能上一张图片动画还未完成，然后又清除了动画，所以要把图片的left值设置是当前图片距离左边距）
+	//6、处理远点的onmouse事件，和点击左右两个按钮一致
+
+	window.onload=function(){
+		var imgs_div=document.getElementById("imgs");
+		var nav_div=document.getElementById("nav");
+		//获取到图片轮播的ul对象数组
+		var imgsUl=imgs_div.getElementsByTagName("ul")[0];
+		//获取到远点的ul对象数组
+		var nav=nav_div.getElementsByTagName("ul")[0];
+		//上一个
+		var prious=document.getElementById("preous");
+		//下一个
+		var next =document.getElementById("next");
+		var timer;
+		var animTimer;
+		var index=1;
+		play();
+		prious.onclick=function(){
+			initImgs(index);
+			index-=1;
+			if(index<1){
+				index=4;
+			}
+			animate(1280);
+			btnShow(index);
+		}
+		next.onclick=function(){
+			initImgs(index);
+			index+=1;
+			if(index>4){
+				index=1;
+			}
+			animate(-1280);
+			btnShow(index);
+		}
+
+		function animate(offset){
+			var newLeft=parseInt(imgsUl.offsetLeft)+offset;
+			// imgsUl.style.left=newLeft;
+			// console.log("定时器外面:此时offsetLeft"+imgsUl.offsetLeft+">>newLeft:"+newLeft);
+			if(newLeft>-1280){
+				// imgsUl.style.left=-5120+"px";
+				donghua(-5120);	
+			}else if(newLeft<-5120){
+				// imgsUl.style.left=-1280+"px";
+				donghua(-1280);	
+			}else{
+				donghua(newLeft);
+			}
+
+		}
+		function donghua(offset){
+			clearInterval(animTimer);
+			animTimer=setInterval(function(){
+				imgsUl.style.left=imgsUl.offsetLeft+(offset-imgsUl.offsetLeft)/10 + "px";
+				if(imgsUl.offsetLeft-offset<10&&imgsUl.offsetLeft-offset>-10){//如果偏移量已经等于指定好的偏移量，则秦楚定时器
+					imgsUl.style.left=offset+"px";
+					clearInterval(animTimer);
+					//开启定时轮播
+					play();			
+				}
+			},20);
+		}
+		function initImgs(cur_index){
+			clearInterval(timer);
+			clearInterval(animTimer);
+			var off=cur_index*1280;
+			imgsUl.style.left=-off+"px";
+		}
+		function play(){
+			timer=setInterval(function(){
+				next.onclick();
+			},2000)
+		}
+		function btnShow(cur_index){
+			var list=nav.children;
+			for(var i=0;i<nav.children.length;i++){
+				nav.children[i].children[0].className="hidden";
+			}
+			nav.children[cur_index-1].children[0].className="current";
+		}
+		for(var i=0;i<nav.children.length;i++){
+			nav.children[i].index=i;
+			var sd=nav.children[i].index;
+			nav.children[i].onmouseover=function(){
+				index=this.index+1;
+				initImgs(this.index+1);
+				btnShow(this.index+1);
+			}
+			nav.children[i].onmouseout=function(){
+				play();
+			}
+		}
+		
+	}
+	</script>
+</body>
+</html>
